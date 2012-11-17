@@ -28,47 +28,58 @@ var fetchAll = function (urls, callback) {
   // call param callback when all requests complete
 
   var fetch = function (url) {
-    var xhr = new XMLHttpRequest();  
-    xhr.responsetype = 'json';
-    xhr.open('GET', url, true);
-    xhr.send();
-    xhr.url = url;
-    return xhr;
+    // Google Analytics Async snippet
+    var scriptEl = document.createElement('script'); 
+    scriptEl.type = 'text/javascript';
+    scriptEl.async = true;
+    scriptEl.src = url;
+    var script = document.getElementsByTagName('script')[0];
+    // Put script infront of this script
+    script.parentNode.insertBefore(scriptEl, script);
+    return scriptEl;
   };
 
-  var complete = function (request) {
-    finished += 1;
-    if (finished === requests.length) {
-      callback.call(null, requests);
+  var complete = function complete(response) {
+    responses.push(response);
+    if (responses.length === requests.length) {
+      callback.call(null, responses);
     }
   };
+  window.complete = complete;
 
-  var registerComplete = function (request) {
-    request.addEventListener('loadend', complete, false);
-  };
-
-  var finished = 0;
+  var responses = [];
   var requests = urls.map(fetch);
-  requests.forEach(registerComplete);
 };
 
 var computeBusFactor = function (repoJson) {
   // Heuristic to compute the Bus/Truck factor of a repository
   // Things to consider:
   // number of committers/core devs
-  // number of contributors
+  // number of contributors (weight by amount committed?)
   // number of forks, watchers, stars
   // part of its own organization
   // size
   // language(s)
   // age
   // activity (time since last commit)
-  return (
-    1 * (1+repoJson.teams.length) + // People who hopefully get paid to know the code
-    0.5 * repoJson.contributors.length +  // People who know some of the code
-    0.01 * repoJson.forks +  // People who looked at the code
-    0.001 * repoJson.watchers // People who follow the code
-  ); 
+  var busFactor = 1;
+
+  if (repoJson.teams) {
+    // People who hopefully get paid to know the code
+    busFactor += repoJson.teams.length;
+  }
+  if (repoJson.contributors) {
+    // People who know some of the code
+    busFactor += 0.5 * repoJson.contributors.length;
+  }
+
+  // People who looked at the code
+  busFactor += 0.01 * repoJson.forks;
+
+  // People who follow the code
+  busFactor += 0.001 * repoJson.watchers;
+
+  return busFactor;
 };
 
 
@@ -83,7 +94,7 @@ var getRepo = function () {
   outputEl.className = '';
 
   // Fetch github repo info
-  var validUserRepoName = /^[-a-zA-Z]+\/[-a-zA-Z]+$/;
+  var validUserRepoName = /^[-a-zA-Z0-9]+\/[-a-zA-Z0-9]+$/;
   var userRepoName = this.value.toString();
 
   if (!validUserRepoName.test(userRepoName)) {
@@ -92,36 +103,24 @@ var getRepo = function () {
 
   // Load repo with its contributors and teams
   var repoUrl = 'https://api.github.com/repos/'+userRepoName;
-  var urls = [repoUrl, repoUrl+'/contributors', repoUrl+'/teams'];
+  var urlify = function (path) { 
+    return repoUrl+path+'?callback=complete';
+  };
+  // TODO: read contributor and team urls from 
+  // repo data instead of assuming api url structure
+  var urls = ['', '/contributors', '/teams'].map(urlify);
 
-  var handleXhrs = function (xhrs) { 
-    var json = xhrs.reduce(function (obj, xhr) {
-      var parsed;
+  var handleResponses = function (responses) { 
+    var json = responses.reduce(function (obj, response) {
+      data = response.data;
 
-      if (xhr.status !== 200 && !endsWith(xhr.url, '/teams')) {
-	throw new Error("Failed to fetch "+xhr.url+" .");
-      }
-
-      // Invalid JSON will throw SyntaxErrors
-      try {
-	parsed = JSON.parse(xhr.responseText);
-      } catch (error) {
-	console.error(error);
-	throw new Error("Failed to parse JSON for "+xhr.url+" .");
-      }
-
-      if (xhr.url === repoUrl) {
-	obj = extend(obj, parsed);
-      } else if (endsWith(xhr.url, '/teams')) {
-	if (parsed && parsed.message && parsed.message === "Not Found") {
-	  obj.teams = [];
-	} else {
-	  obj.teams = parsed;	  
-	}
-      } else if (endsWith(xhr.url, '/contributors')) {
-	obj.contributors = parsed;
-      } else {
-	throw new Error("Unknown XHR to"+xhr.url+" .");
+      // Detect url based on expected response data
+      if (data.url) {  // repo
+	obj = extend(obj, data);
+      } else if (data.length && data[0].login) { // contributors
+	obj.contributors = data;
+      } else if (data.length && data[0].name) { // teams (don't have a login)
+	obj.teams = data;
       }
       return obj;
     }, {});
@@ -132,11 +131,10 @@ var getRepo = function () {
     } else {
       outputEl.textContent = 'No idea.';
     }
-
   };
 
   // Fetch and merge all repo data
-  fetchAll(urls, handleXhrs);
+  fetchAll(urls, handleResponses);
 
   // Show loading
   outputEl.textContent = 'Loading ...';

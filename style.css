@@ -1,0 +1,22 @@
+body {
+ font-family: sans-serif;
+}
+
+#content {
+   width: 30em;
+   margin: auto;
+   text-align: center;
+}
+
+aside {
+   font-size: 10px;
+}
+
+.error, #bus-factor-error {
+   color: red;
+}
+
+img {
+   margin: auto;
+   padding: 2em 0;
+}

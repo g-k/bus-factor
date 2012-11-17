@@ -1,0 +1,48 @@
+<!DOCTYPE HTML>
+<meta http-equiv="content-type" content="text/html" charset="utf-8">
+<html lang="en">
+  <head>
+    <title>Bus Factor Calculator</title>
+
+    <link href="style.css" rel="stylesheet" type="text/css">
+  </head>
+  <body id="content">
+    <h1>Bus Factor Calculator</h1>
+
+    <a href="http://en.wikipedia.org/wiki/Bus_factor">
+      <img src="noun_project_387.svg" alt="bus front">
+    </a>
+
+    <section>
+      How many people are indispensible to the
+      <select id="repo-select">
+	<option>antirez/redis
+	<option>django/django
+	<option>joyent/node
+	<option>rails/rails
+	<option>torvalds/linux
+      </select>
+      project?
+      <p>
+      Or your secret
+      <input id="repo-enter" type="text" placeholder="valve/hl3">
+      Github project?
+
+      <h1 id="bus-factor-output">?</h1>
+
+      <aside>
+	<h1 id="bus-factor-error"></h1>
+
+	Note: Off by a few buses?
+	<a href="#project-issues-pages">Open an issue.</a>
+
+	<p>
+	  Bus picture from
+	  <a href="http://thenounproject.com/noun/bus/#icon-No387">The Noun Project</a>.
+	</p>
+      </aside>
+    </section>
+
+    <script type="text/javascript" src="busfactor.js"></script>
+  </body>
+</html>

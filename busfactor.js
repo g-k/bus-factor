@@ -29,7 +29,7 @@ var fetchAll = function (urls, callback) {
 
   var fetch = function (url) {
     // Google Analytics Async snippet
-    var scriptEl = document.createElement('script'); 
+    var scriptEl = document.createElement('script');
     scriptEl.type = 'text/javascript';
     scriptEl.async = true;
     scriptEl.src = url;
@@ -95,7 +95,7 @@ var getRepo = function () {
 
   // Fetch github repo info
   var validUserRepoName = /^[-a-zA-Z0-9]+\/[-a-zA-Z0-9]+$/;
-  var userRepoName = this.value.toString();
+  var userRepoName = this.value.toString().trim();
 
   if (!validUserRepoName.test(userRepoName)) {
     throw new Error("Invalid repo name");
@@ -103,14 +103,14 @@ var getRepo = function () {
 
   // Load repo with its contributors and teams
   var repoUrl = 'https://api.github.com/repos/'+userRepoName;
-  var urlify = function (path) { 
+  var urlify = function (path) {
     return repoUrl+path+'?callback=complete';
   };
-  // TODO: read contributor and team urls from 
+  // TODO: read contributor and team urls from
   // repo data instead of assuming api url structure
   var urls = ['', '/contributors', '/teams'].map(urlify);
 
-  var handleResponses = function (responses) { 
+  var handleResponses = function (responses) {
     var json = responses.reduce(function (obj, response) {
       data = response.data;
 
@@ -127,7 +127,7 @@ var getRepo = function () {
 
     var busFactor = computeBusFactor(json).toFixed(2);
     if (!isNaN(busFactor)) {
-      outputEl.textContent = busFactor;
+      outputEl.textContent = "Estimated Bus Factor for " + userRepoName + ": " + busFactor;
     } else {
       outputEl.textContent = 'No idea.';
     }
